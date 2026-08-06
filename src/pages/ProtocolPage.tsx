@@ -1,23 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, PhoneCall, CheckCircle, AlertTriangle, ShieldAlert } from 'lucide-react'
+import {
+  ArrowLeft,
+  PhoneCall,
+  CheckCircle,
+  AlertTriangle,
+  ShieldAlert,
+  XCircle,
+} from 'lucide-react'
 import { PROTOCOLS } from '@/data/protocols'
 import { Button } from '@/components/ui/button'
 import { VoiceAssistantBar } from '@/components/VoiceAssistantBar'
 import { ProtocolIllustration } from '@/components/ProtocolIllustration'
 import { useVibration } from '@/hooks/use-vibration'
+import { useSpeech } from '@/hooks/use-speech'
 import { useApp } from '@/context/AppContext'
+import { cn } from '@/lib/utils'
 
 export default function ProtocolPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { setEmergencyNumbersOpen } = useApp()
+  const { setEmergencyNumbersOpen, readAloud, emergencyMode } = useApp()
   const { vibrate } = useVibration()
+  const { speak } = useSpeech()
 
   const protocol = id ? PROTOCOLS[id] : null
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [history, setHistory] = useState<number[]>([])
+  const [showFailedTip, setShowFailedTip] = useState(false)
+  const welcomedRef = useRef(false)
+
+  useEffect(() => {
+    welcomedRef.current = true
+  }, [])
+
+  useEffect(() => {
+    if (emergencyMode) vibrate([100, 50, 100])
+  }, [currentStepIndex, emergencyMode, vibrate])
 
   if (!protocol) {
     return (
@@ -31,20 +51,27 @@ export default function ProtocolPage() {
   }
 
   const currentStep = protocol.steps[currentStepIndex]
-  const isLastStep = currentStepIndex === protocol.steps.length - 1
+  const isFinalStep = currentStep.isFinal || currentStepIndex === protocol.steps.length - 1
+  const speechText = currentStep.speechText || currentStep.mainInstruction
+  const fullSpeechText = welcomedRef.current
+    ? speechText
+    : `Estou aqui com você. Vamos fazer uma etapa de cada vez. ${speechText}`
 
-  const handleNext = (overrideIndex?: number) => {
+  const handleNext = (targetStepId?: number) => {
     vibrate(60)
+    setShowFailedTip(false)
     setHistory((prev) => [...prev, currentStepIndex])
-    if (typeof overrideIndex === 'number') {
-      setCurrentStepIndex(overrideIndex)
-    } else if (currentStepIndex < protocol.steps.length - 1) {
+    if (typeof targetStepId === 'number') {
+      const idx = protocol.steps.findIndex((s) => s.id === targetStepId)
+      if (idx >= 0) setCurrentStepIndex(idx)
+    } else if (!isFinalStep) {
       setCurrentStepIndex((prev) => prev + 1)
     }
   }
 
   const handleBack = () => {
     vibrate(40)
+    setShowFailedTip(false)
     if (history.length > 0) {
       const prev = history[history.length - 1]
       setHistory((h) => h.slice(0, -1))
@@ -56,9 +83,16 @@ export default function ProtocolPage() {
     }
   }
 
+  const handleFailed = () => {
+    vibrate(40)
+    setShowFailedTip(true)
+    speak(
+      'Não se preocupe. Respire fundo e tente novamente com calma. Se não conseguir, ligue 192.',
+    )
+  }
+
   return (
     <div className="pb-32 pt-4">
-      {/* Protocol Banner Header */}
       <div className="container mx-auto max-w-3xl px-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <Button
@@ -66,16 +100,15 @@ export default function ProtocolPage() {
             size="sm"
             onClick={handleBack}
             className="font-bold text-stone-600 hover:text-stone-900 gap-1 pl-0"
+            aria-label="Voltar ao passo anterior"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Button>
-
           <span className="text-xs font-bold text-stone-500 bg-stone-100 px-3 py-1 rounded-full">
             Passo {currentStepIndex + 1} de {protocol.steps.length}
           </span>
         </div>
 
-        {/* Initial Red Urgent Alert */}
         <div className="bg-red-600 text-white p-3.5 rounded-2xl shadow-sm flex items-center justify-between gap-3 font-bold text-sm sm:text-base">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 shrink-0 animate-bounce" />
@@ -90,11 +123,12 @@ export default function ProtocolPage() {
         </div>
       </div>
 
-      {/* Main Step Card */}
       <main className="container mx-auto max-w-3xl px-4">
         <div className="bg-card border-2 border-stone-200 rounded-3xl p-6 sm:p-8 shadow-lg">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-3xl sm:text-4xl">{protocol.emoji}</span>
+            <span className="text-3xl sm:text-4xl" role="img" aria-label={protocol.title}>
+              {protocol.emoji}
+            </span>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-foreground">
                 {currentStep.title}
@@ -105,24 +139,20 @@ export default function ProtocolPage() {
             </div>
           </div>
 
-          {/* Visual Illustration */}
           <div className="my-6">
             <ProtocolIllustration type={currentStep.illustrationType} />
           </div>
 
-          {/* Main Instruction Headline */}
           <div className="bg-stone-50 border-l-4 border-red-600 p-4 sm:p-5 rounded-r-2xl mb-4">
             <h2 className="text-xl sm:text-2xl font-black text-stone-900 leading-snug">
               {currentStep.mainInstruction}
             </h2>
           </div>
 
-          {/* Detailed Instruction Text */}
           <p className="text-base sm:text-lg text-stone-700 leading-relaxed mb-6 font-medium">
             {currentStep.detailedText}
           </p>
 
-          {/* Optional Warning Note */}
           {currentStep.warningNote && (
             <div className="bg-amber-50 border border-amber-300 text-amber-900 p-3.5 rounded-xl text-sm font-semibold mb-6 flex items-start gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
@@ -130,7 +160,18 @@ export default function ProtocolPage() {
             </div>
           )}
 
-          {/* Decision Branching Choices if present */}
+          {showFailedTip && (
+            <div className="bg-orange-50 border border-orange-300 text-orange-900 p-3.5 rounded-xl text-sm font-semibold mb-6 flex items-start gap-2">
+              <XCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+              <div>
+                <p>Não se preocupe. Respire fundo e tente novamente com calma.</p>
+                <p className="mt-1">
+                  Se não conseguir realizar a ação, ligue imediatamente para o SAMU: 192.
+                </p>
+              </div>
+            </div>
+          )}
+
           {currentStep.choices ? (
             <div className="space-y-3 my-6">
               <p className="text-sm font-bold text-stone-500 uppercase tracking-wider text-center">
@@ -140,8 +181,13 @@ export default function ProtocolPage() {
                 {currentStep.choices.map((choice, idx) => (
                   <Button
                     key={idx}
-                    onClick={() => handleNext(choice.nextStepIndex)}
-                    className="h-16 font-extrabold text-base rounded-2xl shadow-md border-2 border-red-600 bg-white text-red-700 hover:bg-red-50 whitespace-normal text-left px-4"
+                    onClick={() => handleNext(choice.nextStepId)}
+                    className={cn(
+                      'h-16 font-extrabold text-base rounded-2xl shadow-md border-2 whitespace-normal text-left px-4',
+                      choice.variant === 'destructive'
+                        ? 'border-red-600 bg-white text-red-700 hover:bg-red-50'
+                        : 'border-green-600 bg-white text-green-700 hover:bg-green-50',
+                    )}
                   >
                     {choice.text}
                   </Button>
@@ -154,14 +200,20 @@ export default function ProtocolPage() {
                 onClick={() => handleNext()}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black h-14 text-lg rounded-2xl shadow-lg"
               >
-                {isLastStep ? 'Concluir Orientações' : 'Próximo Passo →'}
+                {isFinalStep ? 'Concluir Orientações' : '✅ Consegui - Próximo Passo →'}
+              </Button>
+              <Button
+                onClick={handleFailed}
+                variant="outline"
+                className="sm:w-auto bg-white border-2 border-orange-400 text-orange-700 hover:bg-orange-50 font-bold h-14 rounded-2xl"
+              >
+                <XCircle className="h-5 w-5 mr-2" /> Não Consegui
               </Button>
             </div>
           )}
         </div>
 
-        {/* Closing Final Help Step */}
-        {isLastStep && (
+        {isFinalStep && (
           <div className="mt-8 bg-stone-900 text-white p-6 rounded-3xl text-center space-y-4">
             <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
             <h3 className="text-2xl font-bold">Você fez o que era possível!</h3>
@@ -187,12 +239,12 @@ export default function ProtocolPage() {
         )}
       </main>
 
-      {/* Floating Voice Assistant Bar */}
       <VoiceAssistantBar
-        currentText={currentStep.speechText}
+        currentText={fullSpeechText}
         onNext={() => handleNext()}
         onBack={handleBack}
         onRepeat={() => {}}
+        onFailed={handleFailed}
       />
     </div>
   )

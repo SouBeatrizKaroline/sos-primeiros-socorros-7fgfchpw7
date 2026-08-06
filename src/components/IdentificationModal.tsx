@@ -28,16 +28,14 @@ export function IdentificationModal() {
   }
 
   const recommendProtocol = () => {
-    if (answers.choking)
-      return { id: 'engasgo', title: 'Engasgo (Obstrução Respiratória)', emoji: '😮' }
+    if (answers.choking) return { id: 'engasgo', title: 'Engasgo', emoji: '😮' }
     if (answers.conscious === false && answers.breathing === false)
-      return { id: 'parada-cardiaca', title: 'Parada Cardíaca (RCP)', emoji: '❤️' }
+      return { id: 'pessoa-nao-responde', title: 'Pessoa não responde', emoji: '❤️' }
     if (answers.breathing === false)
-      return { id: 'sem-respirar', title: 'Pessoa Sem Respirar', emoji: '🫁' }
-    if (answers.bleeding) return { id: 'sangramento', title: 'Sangramento Intenso', emoji: '🩸' }
-    if (answers.conscious === false)
-      return { id: 'desmaio', title: 'Desmaio ou Perda de Consciência', emoji: '😵' }
-    return { id: 'acidente', title: 'Avaliação Inicial de Acidente', emoji: '🚗' }
+      return { id: 'sem-respirar', title: 'Pessoa não respira', emoji: '🫁' }
+    if (answers.bleeding) return { id: 'sangramento', title: 'Sangramento intenso', emoji: '🩸' }
+    if (answers.conscious === false) return { id: 'desmaio', title: 'Desmaio', emoji: '😵' }
+    return { id: 'acidente', title: 'Acidente', emoji: '🚗' }
   }
 
   const recommended = recommendProtocol()
@@ -45,6 +43,14 @@ export function IdentificationModal() {
   const handleSelectRecommendation = () => {
     handleClose()
     navigate(`/emergencia/${recommended.id}`)
+  }
+
+  const handleAnswer = (answer: boolean) => {
+    if (step === 1) setAnswers({ ...answers, conscious: answer })
+    if (step === 2) setAnswers({ ...answers, breathing: answer })
+    if (step === 3) setAnswers({ ...answers, choking: answer })
+    if (step === 4) setAnswers({ ...answers, bleeding: answer })
+    setStep((s) => s + 1)
   }
 
   return (
@@ -73,27 +79,14 @@ export function IdentificationModal() {
 
             <div className="grid grid-cols-2 gap-4">
               <Button
-                onClick={() => {
-                  if (step === 1) setAnswers({ ...answers, conscious: true })
-                  if (step === 2) setAnswers({ ...answers, breathing: true })
-                  if (step === 3) setAnswers({ ...answers, choking: true })
-                  if (step === 4) setAnswers({ ...answers, bleeding: true })
-                  setStep((s) => s + 1)
-                }}
+                onClick={() => handleAnswer(true)}
                 className="h-24 font-bold text-lg flex flex-col gap-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
               >
                 <CheckCircle className="h-8 w-8" />
                 SIM
               </Button>
-
               <Button
-                onClick={() => {
-                  if (step === 1) setAnswers({ ...answers, conscious: false })
-                  if (step === 2) setAnswers({ ...answers, breathing: false })
-                  if (step === 3) setAnswers({ ...answers, choking: false })
-                  if (step === 4) setAnswers({ ...answers, bleeding: false })
-                  setStep((s) => s + 1)
-                }}
+                onClick={() => handleAnswer(false)}
                 className="h-24 font-bold text-lg flex flex-col gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md"
               >
                 <XCircle className="h-8 w-8" />
@@ -118,7 +111,6 @@ export function IdentificationModal() {
               >
                 Abrir Protocolo Recomendado <ArrowRight className="h-5 w-5" />
               </Button>
-
               <Button
                 variant="outline"
                 onClick={reset}

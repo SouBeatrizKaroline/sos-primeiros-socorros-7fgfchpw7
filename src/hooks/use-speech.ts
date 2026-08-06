@@ -71,9 +71,18 @@ export function useSpeech() {
         } else if (
           transcript.includes('ajuda') ||
           transcript.includes('socorro') ||
-          transcript.includes('ligar')
+          transcript.includes('ligar') ||
+          transcript.includes('preciso de ajuda')
         ) {
           onCommand('help')
+        }
+        if (
+          transcript.includes('não consegui') ||
+          transcript.includes('nao consegui') ||
+          transcript.includes('não consigo') ||
+          transcript.includes('nao consigo')
+        ) {
+          onCommand('failed')
         }
       }
     }

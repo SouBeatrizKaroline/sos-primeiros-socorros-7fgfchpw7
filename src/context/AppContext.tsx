@@ -39,6 +39,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('sos_emergency_mode', String(emergencyMode))
     if (emergencyMode) {
       document.documentElement.classList.add('emergency-mode')
+      setReadAloud(true)
       if ('vibrate' in navigator) {
         navigator.vibrate([100, 50, 100])
       }

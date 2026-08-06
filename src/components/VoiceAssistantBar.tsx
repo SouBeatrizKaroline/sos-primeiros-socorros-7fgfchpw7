@@ -1,15 +1,17 @@
-import { useEffect } from 'react'
-import { Mic, MicOff, RotateCcw, SkipBack, SkipForward, PhoneCall, Volume2 } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Mic, MicOff, RotateCcw, SkipBack, SkipForward, PhoneCall, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSpeech } from '@/hooks/use-speech'
 import { toast } from '@/hooks/use-toast'
 import { useApp } from '@/context/AppContext'
+import { cn } from '@/lib/utils'
 
 interface VoiceAssistantBarProps {
   currentText: string
   onNext: () => void
   onBack: () => void
   onRepeat: () => void
+  onFailed?: () => void
 }
 
 export function VoiceAssistantBar({
@@ -17,11 +19,17 @@ export function VoiceAssistantBar({
   onNext,
   onBack,
   onRepeat,
+  onFailed,
 }: VoiceAssistantBarProps) {
   const { speak, isSpeaking, startListening, stopListening, isListening } = useSpeech()
   const { setEmergencyNumbersOpen, readAloud } = useApp()
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     if (readAloud && currentText) {
       speak(currentText)
     }
@@ -39,28 +47,36 @@ export function VoiceAssistantBar({
           speak(currentText)
         }
         if (cmd === 'back') onBack()
+        if (cmd === 'failed') onFailed?.()
         if (cmd === 'help') setEmergencyNumbersOpen(true)
       })
       toast({
-        title: '🔊 Assistente de Voz Ativo',
-        description: 'Diga "Próximo passo", "Repita" ou "Voltar" a qualquer momento.',
+        title: '🔊 Pulso Voz Ativo',
+        description:
+          'Diga "Próximo passo", "Repita", "Voltar", "Não consegui" ou "Preciso de ajuda".',
       })
     }
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 bg-stone-900/95 text-white border-t border-stone-800 p-3 backdrop-blur shadow-2xl">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-30 bg-stone-900/95 text-white border-t border-stone-800 p-3 backdrop-blur shadow-2xl"
+      role="region"
+      aria-label="Barra do assistente de voz"
+    >
       <div className="container mx-auto max-w-4xl flex items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <Button
             onClick={toggleVoiceMode}
             variant={isListening ? 'default' : 'secondary'}
             size="sm"
-            className={`font-bold gap-2 rounded-xl transition-all ${
+            className={cn(
+              'font-bold gap-2 rounded-xl transition-all',
               isListening
                 ? 'bg-red-600 hover:bg-red-700 text-white ring-4 ring-red-500/30'
-                : 'bg-stone-800 text-stone-200 hover:bg-stone-700'
-            }`}
+                : 'bg-stone-800 text-stone-200 hover:bg-stone-700',
+            )}
+            aria-label={isListening ? 'Desativar comando de voz' : 'Ativar comando de voz'}
           >
             {isListening ? (
               <>
@@ -78,7 +94,7 @@ export function VoiceAssistantBar({
           {isListening && (
             <div className="hidden md:flex items-center gap-1.5 text-xs text-stone-300 font-medium">
               <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-ping" />
-              Comando: "Próximo paso" | "Repita" | "Voltar"
+              Diga: "Próximo" | "Repita" | "Voltar" | "Não consegui" | "Ajuda"
             </div>
           )}
         </div>
@@ -89,6 +105,7 @@ export function VoiceAssistantBar({
             variant="ghost"
             size="sm"
             className="text-stone-300 hover:text-white hover:bg-stone-800 font-semibold"
+            aria-label="Voltar ao passo anterior"
           >
             <SkipBack className="h-4 w-4 sm:mr-1" />
             <span className="hidden xs:inline">Voltar</span>
@@ -101,19 +118,35 @@ export function VoiceAssistantBar({
             }}
             variant="ghost"
             size="sm"
-            className={`text-stone-300 hover:text-white hover:bg-stone-800 font-semibold ${
-              isSpeaking ? 'text-yellow-400 animate-pulse' : ''
-            }`}
+            className={cn(
+              'text-stone-300 hover:text-white hover:bg-stone-800 font-semibold',
+              isSpeaking ? 'text-yellow-400 animate-pulse' : '',
+            )}
+            aria-label="Repetir orientação"
           >
             <RotateCcw className="h-4 w-4 sm:mr-1" />
-            <span className="hidden xs:inline">Repetir</span>
+            <span className="hidden xs:inline">🔁 Repetir</span>
           </Button>
+
+          {onFailed && (
+            <Button
+              onClick={onFailed}
+              variant="ghost"
+              size="sm"
+              className="text-orange-400 hover:text-orange-300 hover:bg-stone-800 font-semibold"
+              aria-label="Marcar como não conseguido"
+            >
+              <XCircle className="h-4 w-4 sm:mr-1" />
+              <span className="hidden xs:inline">Não Consegui</span>
+            </Button>
+          )}
 
           <Button
             onClick={onNext}
             variant="default"
             size="sm"
             className="bg-red-600 hover:bg-red-500 text-white font-bold gap-1 rounded-lg px-3 sm:px-4"
+            aria-label="Próximo passo"
           >
             <span className="hidden xs:inline">Próximo</span>
             <SkipForward className="h-4 w-4" />

@@ -33,11 +33,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-sm">
           <div>
             <h3 className="font-bold text-base text-white mb-3 flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-red-500" /> SOS Primeiros Socorros
+              <HeartPulse className="h-4 w-4 text-red-500" /> PULSO
             </h3>
             <p className="text-stone-400 leading-relaxed">
               Plataforma offline, simples e guiada por voz para auxílio rápido nos primeiros minutos
-              de uma emergência.
+              de uma emergência. Primeiros Socorros Inteligentes.
             </p>
           </div>
 
@@ -46,25 +46,25 @@ export function Footer() {
             <ul className="space-y-2 text-stone-300">
               <li>
                 <Link to="/emergencia/engasgo" className="hover:text-red-400 transition-colors">
-                  😮 Engasgo e Asfixia
+                  😮 Engasgo
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/emergencia/parada-cardiaca"
+                  to="/emergencia/pessoa-nao-responde"
                   className="hover:text-red-400 transition-colors"
                 >
-                  ❤️ Parada Cardíaca (RCP)
+                  ❤️ Pessoa não responde
                 </Link>
               </li>
               <li>
                 <Link to="/emergencia/sangramento" className="hover:text-red-400 transition-colors">
-                  🩸 Sangramento Intenso
+                  🩸 Sangramento intenso
                 </Link>
               </li>
               <li>
                 <Link to="/emergencia/queimadura" className="hover:text-red-400 transition-colors">
-                  🔥 Queimaduras
+                  🔥 Queimadura
                 </Link>
               </li>
             </ul>
@@ -75,15 +75,18 @@ export function Footer() {
               <AlertTriangle className="h-4 w-4 text-yellow-500" /> Aviso Legal Importante
             </h3>
             <p className="text-stone-400 leading-relaxed text-xs">
-              Este aplicativo é um guia instrutivo suplementar para leigos em emergências. Não
-              substitui treinamento profissional, diagnóstico nem atendimento do SAMU ou Corpo de
-              Bombeiros.
+              A plataforma PULSO não substitui profissionais de saúde, diagnósticos ou serviços de
+              emergência. Não armazena dados pessoais. Não substitui treinamento profissional nem
+              atendimento do SAMU ou Corpo de Bombeiros.
             </p>
           </div>
         </div>
 
         <div className="border-t border-stone-800 pt-6 text-center text-xs text-stone-500 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <span>© {new Date().getFullYear()} SOS Primeiros Socorros. Acesso Livre e Gratuito.</span>
+          <span>
+            © {new Date().getFullYear()} PULSO - Primeiros Socorros Inteligentes. Acesso Livre e
+            Gratuito.
+          </span>
           <span>Instalação PWA Offline Habilitada</span>
         </div>
       </div>
