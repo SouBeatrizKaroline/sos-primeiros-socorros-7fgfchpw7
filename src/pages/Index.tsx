@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { PwaInstallBanner } from '@/components/PwaInstallBanner'
 import { useApp } from '@/context/AppContext'
 import { useSpeech } from '@/hooks/use-speech'
+import { cn } from '@/lib/utils'
 
 export default function Index() {
   const { setIdentificationOpen, largeText, setLargeText, readAloud, setReadAloud } = useApp()
