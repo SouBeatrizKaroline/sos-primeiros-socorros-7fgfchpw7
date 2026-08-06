@@ -22,7 +22,15 @@ export default function ProtocolPage() {
   const navigate = useNavigate()
   const { setEmergencyNumbersOpen, readAloud, emergencyMode } = useApp()
   const { vibrate } = useVibration()
-  const { speak } = useSpeech()
+  const {
+    speak,
+    isSpeaking,
+    stopSpeaking,
+    startListening,
+    stopListening,
+    isListening,
+    isRecognitionSupported,
+  } = useSpeech()
 
   const protocol = id ? PROTOCOLS[id] : null
 
@@ -89,7 +97,8 @@ export default function ProtocolPage() {
     vibrate(40)
     setShowFailedTip(true)
     speak(
-      'Não se preocupe. Respire fundo e tente novamente com calma. Se não conseguir, ligue 192.',
+      `Não se preocupe. Respire fundo e tente novamente com calma. Vou repetir mais devagar. ${speechText}`,
+      0.7,
     )
   }
 
@@ -261,6 +270,13 @@ export default function ProtocolPage() {
           onBack={handleBack}
           onRepeat={() => {}}
           onFailed={handleFailed}
+          speak={speak}
+          isSpeaking={isSpeaking}
+          stopSpeaking={stopSpeaking}
+          startListening={startListening}
+          stopListening={stopListening}
+          isListening={isListening}
+          isRecognitionSupported={isRecognitionSupported}
         />
       )}
     </div>

@@ -1,7 +1,15 @@
-import { useEffect, useRef } from 'react'
-import { Mic, MicOff, RotateCcw, SkipBack, SkipForward, PhoneCall, XCircle } from 'lucide-react'
+import { useEffect } from 'react'
+import {
+  Mic,
+  MicOff,
+  RotateCcw,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  XCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useSpeech } from '@/hooks/use-speech'
 import { toast } from '@/hooks/use-toast'
 import { useApp } from '@/context/AppContext'
 import { cn } from '@/lib/utils'
@@ -12,6 +20,13 @@ interface VoiceAssistantBarProps {
   onBack: () => void
   onRepeat: () => void
   onFailed?: () => void
+  speak: (text: string, rate?: number) => void
+  isSpeaking: boolean
+  stopSpeaking: () => void
+  startListening: (onCommand?: (cmd: string) => void) => void
+  stopListening: () => void
+  isListening: boolean
+  isRecognitionSupported: boolean
 }
 
 export function VoiceAssistantBar({
@@ -20,42 +35,52 @@ export function VoiceAssistantBar({
   onBack,
   onRepeat,
   onFailed,
+  speak,
+  isSpeaking,
+  stopSpeaking,
+  startListening,
+  stopListening,
+  isListening,
+  isRecognitionSupported,
 }: VoiceAssistantBarProps) {
-  const { speak, isSpeaking, startListening, stopListening, isListening } = useSpeech()
-  const { setEmergencyNumbersOpen, readAloud } = useApp()
-  const isFirstRender = useRef(true)
+  const { setEmergencyNumbersOpen, readAloud, setReadAloud } = useApp()
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
     if (readAloud && currentText) {
       speak(currentText)
+    } else if (!readAloud) {
+      stopSpeaking()
     }
-  }, [currentText, readAloud, speak])
+  }, [currentText, readAloud, speak, stopSpeaking])
 
   const toggleVoiceMode = () => {
     if (isListening) {
       stopListening()
       toast({ description: 'Modo de voz desativado.' })
-    } else {
-      startListening((cmd) => {
-        if (cmd === 'next') onNext()
-        if (cmd === 'repeat') {
-          onRepeat()
-          speak(currentText)
-        }
-        if (cmd === 'back') onBack()
-        if (cmd === 'failed') onFailed?.()
-        if (cmd === 'help') setEmergencyNumbersOpen(true)
-      })
-      toast({
-        title: '🔊 Pulso Voz Ativo',
-        description:
-          'Diga "Próximo passo", "Repita", "Voltar", "Não consegui" ou "Preciso de ajuda".',
-      })
+      return
     }
+    if (!isRecognitionSupported) {
+      toast({
+        title: 'Reconhecimento de voz não suportado',
+        description: 'Use os botões na tela para navegar pelos passos.',
+      })
+      return
+    }
+    startListening((cmd) => {
+      if (cmd === 'next') onNext()
+      if (cmd === 'repeat') {
+        onRepeat()
+        speak(currentText)
+      }
+      if (cmd === 'back') onBack()
+      if (cmd === 'failed') onFailed?.()
+      if (cmd === 'help') setEmergencyNumbersOpen(true)
+    })
+    toast({
+      title: '🔊 Pulso Voz Ativo',
+      description:
+        'Diga "Próximo passo", "Repita", "Voltar", "Não consegui" ou "Preciso de ajuda".',
+    })
   }
 
   return (
@@ -65,7 +90,22 @@ export function VoiceAssistantBar({
       aria-label="Barra do assistente de voz"
     >
       <div className="container mx-auto max-w-4xl flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setReadAloud(!readAloud)}
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'rounded-xl transition-all p-2',
+              readAloud
+                ? 'text-yellow-400 hover:text-yellow-300'
+                : 'text-stone-500 hover:text-stone-400',
+            )}
+            aria-label={readAloud ? 'Desativar voz' : 'Ativar voz'}
+          >
+            {readAloud ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+
           <Button
             onClick={toggleVoiceMode}
             variant={isListening ? 'default' : 'secondary'}
@@ -86,7 +126,7 @@ export function VoiceAssistantBar({
             ) : (
               <>
                 <MicOff className="h-4 w-4 text-stone-400" />
-                <span className="hidden sm:inline">Ligar Comando de Voz</span>
+                <span className="hidden sm:inline">Comando de Voz</span>
               </>
             )}
           </Button>

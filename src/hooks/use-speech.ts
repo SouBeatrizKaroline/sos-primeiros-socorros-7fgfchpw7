@@ -109,6 +109,11 @@ export function useSpeech() {
     }
   }, [])
 
+  const isRecognitionSupported = Boolean(
+    typeof window !== 'undefined' &&
+    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition),
+  )
+
   return {
     speak,
     stopSpeaking,
@@ -117,5 +122,6 @@ export function useSpeech() {
     stopListening,
     isListening,
     recognizedText,
+    isRecognitionSupported,
   }
 }
