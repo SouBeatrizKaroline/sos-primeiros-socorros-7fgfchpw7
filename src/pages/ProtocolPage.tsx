@@ -29,6 +29,7 @@ export default function ProtocolPage() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [history, setHistory] = useState<number[]>([])
   const [showFailedTip, setShowFailedTip] = useState(false)
+  const [completed, setCompleted] = useState(false)
   const welcomedRef = useRef(false)
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export default function ProtocolPage() {
   const handleBack = () => {
     vibrate(40)
     setShowFailedTip(false)
+    setCompleted(false)
     if (history.length > 0) {
       const prev = history[history.length - 1]
       setHistory((h) => h.slice(0, -1))
@@ -91,9 +93,17 @@ export default function ProtocolPage() {
     )
   }
 
+  const handleComplete = () => {
+    vibrate(100)
+    setCompleted(true)
+    speak(
+      'Você fez o que era possível. Mantenha a calma e continue monitorando a pessoa até a chegada da equipe de resgate.',
+    )
+  }
+
   return (
     <div className="pb-32 pt-4">
-      <div className="container mx-auto max-w-3xl px-4 mb-4">
+      <div className={cn('container mx-auto max-w-3xl px-4 mb-4', completed && 'hidden')}>
         <div className="flex items-center justify-between mb-3">
           <Button
             variant="ghost"
@@ -124,7 +134,12 @@ export default function ProtocolPage() {
       </div>
 
       <main className="container mx-auto max-w-3xl px-4">
-        <div className="bg-card border-2 border-stone-200 rounded-3xl p-6 sm:p-8 shadow-lg">
+        <div
+          className={cn(
+            'bg-card border-2 border-stone-200 rounded-3xl p-6 sm:p-8 shadow-lg',
+            completed && 'hidden',
+          )}
+        >
           <div className="flex items-center gap-3 mb-4">
             <span className="text-3xl sm:text-4xl" role="img" aria-label={protocol.title}>
               {protocol.emoji}
@@ -197,7 +212,7 @@ export default function ProtocolPage() {
           ) : (
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button
-                onClick={() => handleNext()}
+                onClick={() => (isFinalStep ? handleComplete() : handleNext())}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black h-14 text-lg rounded-2xl shadow-lg"
               >
                 {isFinalStep ? 'Concluir Orientações' : '✅ Consegui - Próximo Passo →'}
@@ -213,8 +228,8 @@ export default function ProtocolPage() {
           )}
         </div>
 
-        {isFinalStep && (
-          <div className="mt-8 bg-stone-900 text-white p-6 rounded-3xl text-center space-y-4">
+        {(isFinalStep || completed) && (
+          <div className="mt-8 bg-stone-900 text-white p-6 rounded-3xl text-center space-y-4 animate-fade-in-up">
             <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
             <h3 className="text-2xl font-bold">Você fez o que era possível!</h3>
             <p className="text-stone-300 text-sm max-w-md mx-auto">
@@ -239,13 +254,15 @@ export default function ProtocolPage() {
         )}
       </main>
 
-      <VoiceAssistantBar
-        currentText={fullSpeechText}
-        onNext={() => handleNext()}
-        onBack={handleBack}
-        onRepeat={() => {}}
-        onFailed={handleFailed}
-      />
+      {!completed && (
+        <VoiceAssistantBar
+          currentText={fullSpeechText}
+          onNext={() => handleNext()}
+          onBack={handleBack}
+          onRepeat={() => {}}
+          onFailed={handleFailed}
+        />
+      )}
     </div>
   )
 }
